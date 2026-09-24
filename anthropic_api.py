@@ -36,14 +36,15 @@ def _fake_signature() -> str:
 
 
 def _request_has_tool_result(messages: List[dict]) -> bool:
-    """True if the conversation already contains a tool_result (a continuation
-    turn after the CLI executed one of our Bash commands)."""
-    for message in messages:
+    """True if the latest user turn contains a tool_result."""
+    for message in reversed(messages):
+        if message.get("role") != "user":
+            continue
         content = message.get("content")
-        if isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "tool_result":
-                    return True
+        return isinstance(content, list) and any(
+            isinstance(block, dict) and block.get("type") == "tool_result"
+            for block in content
+        )
     return False
 
 

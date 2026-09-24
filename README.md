@@ -33,6 +33,11 @@ connection settings to the CLI process; no shell-profile edits or permanent
 API-key changes are needed. Choose another port with, for example,
 `GIBBERISHLM_PORT=5050 ./scripts/run-copilot.sh -p "Say hello"`.
 
+The Claude launcher uses a dedicated config directory at
+`${XDG_CONFIG_HOME:-$HOME/.config}/gibberishlm/claude`. This skips Claude
+Code's account onboarding and keeps its demo state separate from your normal
+Claude configuration. Set `GIBBERISHLM_CLAUDE_CONFIG_DIR` to override it.
+
 Copilot defaults to `COPILOT_OFFLINE=true`. To allow Copilot's GitHub, MCP,
 web, and other network capabilities while still sending **model inference to
 the local GibberishLM API**, run
@@ -43,6 +48,21 @@ The launchers enable tool calls by default. GibberishLM runs one safe tool offer
 by Claude Code or Copilot CLI on each fresh turn. Set `GIBBERISHLM_TOOLS=0` to
 disable tool calls. **A CLI may actually execute tools it accepts from the
 API**; keep permission prompts enabled and review each request.
+
+To use scripted responses instead of generated prose for the first three user
+prompts, set `GIBBERISHLM_TEMPLATE` to one of the included YAML files:
+
+```bash
+GIBBERISHLM_TEMPLATE=templates/copilot.yaml ./scripts/run-copilot.sh -p "Say hello"
+GIBBERISHLM_TEMPLATE=templates/claude-code.yaml ./scripts/run-claude.sh -p "Say hello"
+```
+
+Each prompt has one or more `steps`; a step with `tool_calls` requests those
+tools, and the next step replies after the client returns tool results. Prompts
+or steps not covered by the template fall back to generated output. The named
+tools must be offered by the client, and **template commands may actually run**;
+review YAML commands before enabling tools. See the [runbook](RUNBOOK.md) for
+the format and request settings.
 
 See the [runbook](RUNBOOK.md) for CLI connection details, manual server startup,
 request examples, configuration, and troubleshooting.
@@ -73,6 +93,8 @@ app.py                    Flask API endpoints and service entry point
 anthropic_api.py          Fake Anthropic Messages response and SSE formatting
 gibberishlm.py              Generated prose, thinking, and demo commands
 timing.py                 Per-request response pacing
+response_templates.py     YAML template loading and selection
+templates/               Copilot and Claude Code three-turn examples
 scripts/run-claude.sh     Start server and run Claude Code
 scripts/run-copilot.sh    Start server and run GitHub Copilot CLI
 scripts/_gibberishlm-server.sh  Shared launcher lifecycle

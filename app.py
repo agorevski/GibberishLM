@@ -15,6 +15,7 @@ from flask import Flask, Response, jsonify, request, stream_with_context
 from werkzeug.exceptions import BadRequest
 
 import anthropic_api
+import response_templates
 import timing
 
 app = Flask(__name__, static_folder=None)
@@ -30,6 +31,7 @@ DEFAULT_MODEL_ID = os.environ.get(
 # (default), the real Claude Code CLI will actually execute the harmless demo
 # command (e.g. `echo "hello world"`). Set GIBBERISHLM_TOOLS=0 to disable.
 ALLOW_TOOLS = os.environ.get("GIBBERISHLM_TOOLS", "1") not in ("0", "false", "no")
+RESPONSE_TEMPLATE: tuple[tuple[dict, ...], ...] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -172,10 +174,20 @@ def v1_messages() -> Response:
     )
 
     clock = timing.RequestTiming(want_thinking=want_thinking)
-    blocks = anthropic_api.plan_blocks(
-        messages, tools, want_thinking, allow_tools,
-        think_words=clock.think_words(),
-    )
+    step = response_templates.select_step(RESPONSE_TEMPLATE, messages) \
+        if RESPONSE_TEMPLATE is not None else None
+    if step is None:
+        blocks = anthropic_api.plan_blocks(
+            messages, tools, want_thinking, allow_tools,
+            think_words=clock.think_words(),
+        )
+    else:
+        try:
+            blocks = response_templates.plan_step(
+                step, tools, want_thinking, allow_tools
+            )
+        except ValueError as exc:
+            return _invalid_request(str(exc))
     response_plan = anthropic_api.prepare_response(
         messages, blocks, payload.get("max_tokens")
     )
@@ -230,6 +242,11 @@ def v1_model(model_id: str) -> Response:
 
 def main() -> None:
     """Console-script entry point (``gibberishlm``) used by uv."""
+    global RESPONSE_TEMPLATE
+    template_path = os.environ.get("GIBBERISHLM_TEMPLATE")
+    RESPONSE_TEMPLATE = (
+        response_templates.load_template(template_path) if template_path else None
+    )
     host = os.environ.get("GIBBERISHLM_HOST", "127.0.0.1")
     port = int(os.environ.get("GIBBERISHLM_PORT", "5000"))
     debug = os.environ.get("GIBBERISHLM_DEBUG", "0") in ("1", "true", "yes")

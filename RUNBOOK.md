@@ -43,11 +43,59 @@ port as a launcher.
 | `GIBBERISHLM_MODEL_ID` | `claude-opus-4-8-gibberishlm` | Model id reported to API clients                  |
 | `GIBBERISHLM_TOOLS`  | `1` | `0` disables tool-use requests; `1` calls a supported tool offered by the client |
 | `GIBBERISHLM_DEBUG`  | `0`                          | `1` enables Flask debug/reloader                   |
+| `GIBBERISHLM_TEMPLATE` | unset | Path to a YAML response template (relative to the server's working directory, or absolute) |
+| `GIBBERISHLM_CLAUDE_CONFIG_DIR` | `${XDG_CONFIG_HOME:-$HOME/.config}/gibberishlm/claude` | Dedicated Claude Code config used by `run-claude.sh` |
 
 The launchers force `GIBBERISHLM_HOST=127.0.0.1` and `GIBBERISHLM_DEBUG=0`.
 `GIBBERISHLM_PORT`, `GIBBERISHLM_MODEL_ID`, and `GIBBERISHLM_TOOLS` can be set for
 either launcher. `GIBBERISHLM_STARTUP_TIMEOUT` controls how long a launcher waits
 for the API to respond (default: 60 seconds; allowed range: 1–999).
+
+### Scripted responses
+
+Set `GIBBERISHLM_TEMPLATE=templates/copilot.yaml` for Copilot CLI or
+`GIBBERISHLM_TEMPLATE=templates/claude-code.yaml` for Claude Code. Both example
+files cover the first three **user prompts** (zero-based `messages[0]` through
+`messages[2]`). For example:
+
+```bash
+GIBBERISHLM_TEMPLATE=templates/copilot.yaml ./scripts/run-copilot.sh -p "Demo"
+```
+
+The YAML format is:
+
+```yaml
+messages:
+  - steps:
+      - thinking: "Thinking ABC123"
+        text: "I will use the offered tool."
+        tool_calls:
+          - name: Bash
+            input:
+              command: 'echo "hello"'
+              description: "Print a greeting"
+      - text: "XYZ: Finished after the tool result."
+  - steps:
+      - text: "Response to the second user prompt."
+```
+
+Each `messages` entry corresponds to a **new user prompt**, not an API request.
+An assistant response containing tool calls is followed by a client tool-result
+request; this selects the next `steps` entry *within the same user prompt*.
+Multiple calls can be placed in one `tool_calls` list. The next new user prompt
+selects the next `messages` entry. Missing entries or exhausted steps use the
+existing generated response logic. Turn selection uses the request's message
+history; separate conversations start from index zero.
+
+`thinking` is included only when extended thinking is enabled in the request.
+Tool calls are included only when tools are enabled and `tool_choice` is not
+`none`. A template tool name must match an offered client tool exactly, or the
+API returns HTTP 400; the tool `input` object is passed through as written.
+The server does not execute tools, but a connected CLI may execute them after
+its normal permission prompt. Keep templates trusted and commands safe.
+Invalid or unreadable templates stop server startup with an explicit error.
+Responses still honor `max_tokens`, streaming, and response timing. When no
+template is configured, behavior is unchanged.
 
 #### Response-timing knobs
 
@@ -125,10 +173,15 @@ under `TMPDIR` (or the system default) rather than in the checkout and is
 removed on exit. A first run still needs a writable uv environment/cache, even
 if the checkout itself is read-only.
 
-The Claude launcher sets `ANTHROPIC_BASE_URL`, a dummy `ANTHROPIC_API_KEY`, the
-fake `ANTHROPIC_MODEL`, and
-`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`; it removes potentially
+The Claude launcher uses a dedicated config directory, seeds it to skip Claude
+Code's account onboarding, and sets `ANTHROPIC_BASE_URL`, a dummy
+`ANTHROPIC_API_KEY`, the fake `ANTHROPIC_MODEL`, and
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`. It removes potentially
 conflicting Anthropic-token and cloud-provider settings for that invocation.
+The default config path is
+`${XDG_CONFIG_HOME:-$HOME/.config}/gibberishlm/claude`; override it with
+`GIBBERISHLM_CLAUDE_CONFIG_DIR`. This preserves trust prompts and session state
+across demo runs without reading or changing your normal Claude configuration.
 
 The Copilot launcher configures Anthropic BYOK via `COPILOT_PROVIDER_TYPE`,
 `COPILOT_PROVIDER_BASE_URL`, and a dummy `COPILOT_PROVIDER_API_KEY`. It defaults

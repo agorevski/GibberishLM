@@ -1,8 +1,7 @@
-"""Gibberish web application.
+"""Gibberish Anthropic-compatible API.
 
-A faux Claude Opus 4.8 / Claude Code CLI experience. Serves a terminal-style
-UI and streams entirely fabricated agent output (reasoning, bash tool calls,
-results, and lorem ipsum prose) over Server-Sent Events.
+A faux Claude Opus 4.8 model that returns entirely fabricated agent output
+(reasoning, bash tool calls, results, and lorem ipsum prose).
 
 Nothing here connects to a real model. All output is gibberish by design.
 """
@@ -13,17 +12,16 @@ import json
 import os
 import time
 
-from flask import Flask, Response, jsonify, render_template, request, stream_with_context
+from flask import Flask, Response, jsonify, request, stream_with_context
 
 import anthropic_api
-import gibberish
 import timing
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 
 MODEL_NAME = "Claude Opus 4.8 (Gibberish Emulation)"
 
-# Default model id reported to Anthropic API clients (e.g. the Claude Code CLI).
+# Default model id reported to Anthropic API clients.
 DEFAULT_MODEL_ID = os.environ.get(
     "GIBBERISH_MODEL_ID", "claude-opus-4-8-gibberish"
 )
@@ -34,76 +32,8 @@ DEFAULT_MODEL_ID = os.environ.get(
 ALLOW_TOOLS = os.environ.get("GIBBERISH_TOOLS", "1") not in ("0", "false", "no")
 
 
-def _sse(event: str, data: dict) -> str:
-    """Format a Server-Sent Events message."""
-    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
-
-
-@app.route("/")
-def index() -> str:
-    return render_template("index.html", model_name=MODEL_NAME)
-
-
-@app.route("/api/stream", methods=["POST"])
-def stream() -> Response:
-    payload = request.get_json(silent=True) or {}
-    prompt = str(payload.get("prompt", "")).strip()
-
-    @stream_with_context
-    def generate():
-        clock = timing.RequestTiming(want_thinking=True)
-        yield _sse("session_start", {"model": MODEL_NAME, "prompt": prompt})
-
-        first_token = True
-        for token in gibberish.build_session(prompt, think_words=clock.think_words()):
-            if token.type == "status":
-                yield _sse("status", {"label": token.content})
-                continue
-
-            if token.type == "done":
-                yield _sse("done", {})
-                continue
-
-            if token.type == "tool_call":
-                yield _sse(
-                    "tool_call",
-                    {"tool": (token.meta or {}).get("tool", "bash"),
-                     "command": token.content},
-                )
-                # Simulate the command actually executing.
-                time.sleep(clock.tool_exec_latency())
-                continue
-
-            if token.type == "tool_result":
-                yield _sse("block_start", {"type": "tool_result"})
-                for chunk in gibberish.stream_tokens(token):
-                    yield _sse("delta", {"type": "tool_result", "text": chunk})
-                    time.sleep(clock.tool_delay(max(1, len(chunk.split()))))
-                yield _sse("block_end", {"type": "tool_result"})
-                continue
-
-            # thinking / text blocks stream chunk by chunk.
-            yield _sse("block_start", {"type": token.type})
-            for chunk in gibberish.stream_tokens(token):
-                wc = max(1, len(chunk.split()))
-                if first_token:
-                    delay = clock.initial_delay(visible_thinking=token.type == "thinking")
-                    first_token = False
-                elif token.type == "thinking":
-                    delay = clock.think_delay(wc)
-                else:
-                    delay = clock.text_delay(wc)
-                time.sleep(delay)
-                yield _sse("delta", {"type": token.type, "text": chunk})
-            yield _sse("block_end", {"type": token.type})
-
-    return Response(generate(), mimetype="text/event-stream",
-                    headers={"Cache-Control": "no-cache",
-                             "X-Accel-Buffering": "no"})
-
-
 # ---------------------------------------------------------------------------
-# Anthropic Messages API compatibility (for the Claude Code CLI).
+# Anthropic Messages API compatibility (for Claude Code and Copilot CLI).
 #
 # These endpoints make Gibberish look like an Anthropic-compatible model
 # provider. Point the CLI at Gibberish with:
@@ -123,10 +53,14 @@ def v1_messages() -> Response:
     messages = payload.get("messages") or []
     tools = payload.get("tools") or []
     want_thinking = _wants_thinking(payload)
+    tool_choice = payload.get("tool_choice")
+    allow_tools = ALLOW_TOOLS and not (
+        isinstance(tool_choice, dict) and tool_choice.get("type") == "none"
+    )
 
     clock = timing.RequestTiming(want_thinking=want_thinking)
     blocks = anthropic_api.plan_blocks(
-        messages, tools, want_thinking, ALLOW_TOOLS,
+        messages, tools, want_thinking, allow_tools,
         think_words=clock.think_words(),
     )
 

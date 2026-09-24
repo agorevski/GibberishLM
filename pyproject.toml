@@ -1,7 +1,7 @@
 [project]
 name = "gibberish"
 version = "0.1.0"
-description = "A faux Claude Opus 4.8 / Claude Code CLI experience that streams entirely fake output."
+description = "A local Anthropic-compatible API serving fabricated output for CLI demos."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -24,6 +24,4 @@ include = [
     "gibberish.py",
     "anthropic_api.py",
     "timing.py",
-    "templates/**",
-    "static/**",
 ]

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gibberish — {{ model_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <div class="title">gibberish — claude code (emulated)</div>
+      <div class="model">{{ model_name }}</div>
+    </header>
+
+    <main id="transcript" class="transcript" aria-live="polite">
+      <div class="banner">
+        <pre class="logo">
+   ____ _ _     _               _     _
+  / ___(_) |__ | |__   ___ _ __(_)___| |__
+ | |  _| | '_ \| '_ \ / _ \ '__| / __| '_ \
+ | |_| | | |_) | |_) |  __/ |  | \__ \ | | |
+  \____|_|_.__/|_.__/ \___|_|  |_|___/_| |_|
+        </pre>
+        <p class="tagline">Emulating <strong>{{ model_name }}</strong> · all output is fake by design</p>
+        <p class="hint">Type a prompt and press <kbd>Enter</kbd>. <kbd>Shift</kbd>+<kbd>Enter</kbd> for a newline.</p>
+      </div>
+    </main>
+
+    <footer class="composer">
+      <span class="prompt-sigil">&gt;</span>
+      <textarea id="prompt" rows="1" placeholder="Ask Gibberish anything…" autofocus></textarea>
+      <button id="send" type="button">Send</button>
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

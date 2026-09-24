@@ -1,9 +1,9 @@
-"""Gibberish Anthropic-compatible API.
+"""LoremOpus Anthropic-compatible API.
 
 A faux Claude Opus 4.8 model that returns entirely fabricated agent output
 (reasoning, bash tool calls, results, and lorem ipsum prose).
 
-Nothing here connects to a real model. All output is gibberish by design.
+Nothing here connects to a real model. All output is fabricated nonsense.
 """
 
 from __future__ import annotations
@@ -19,24 +19,24 @@ import timing
 
 app = Flask(__name__, static_folder=None)
 
-MODEL_NAME = "Claude Opus 4.8 (Gibberish Emulation)"
+MODEL_NAME = "Claude Opus 4.8 (LoremOpus Emulation)"
 
 # Default model id reported to Anthropic API clients.
 DEFAULT_MODEL_ID = os.environ.get(
-    "GIBBERISH_MODEL_ID", "claude-opus-4-8-gibberish"
+    "LOREMOPUS_MODEL_ID", "claude-opus-4-8-loremopus"
 )
 
 # Whether to emit fake Bash tool calls to Anthropic API clients. When enabled
 # (default), the real Claude Code CLI will actually execute the harmless demo
-# command (e.g. `echo "hello world"`). Set GIBBERISH_TOOLS=0 to disable.
-ALLOW_TOOLS = os.environ.get("GIBBERISH_TOOLS", "1") not in ("0", "false", "no")
+# command (e.g. `echo "hello world"`). Set LOREMOPUS_TOOLS=0 to disable.
+ALLOW_TOOLS = os.environ.get("LOREMOPUS_TOOLS", "1") not in ("0", "false", "no")
 
 
 # ---------------------------------------------------------------------------
 # Anthropic Messages API compatibility (for Claude Code and Copilot CLI).
 #
-# These endpoints make Gibberish look like an Anthropic-compatible model
-# provider. Point the CLI at Gibberish with:
+# These endpoints make LoremOpus look like an Anthropic-compatible model
+# provider. Point the CLI at LoremOpus with:
 #     ANTHROPIC_BASE_URL=http://127.0.0.1:5000
 # Authentication is intentionally NOT enforced — any API key is accepted.
 # ---------------------------------------------------------------------------
@@ -112,10 +112,10 @@ def v1_model(model_id: str) -> Response:
 
 
 def main() -> None:
-    """Console-script entry point (``gibberish``) used by uv."""
-    host = os.environ.get("GIBBERISH_HOST", "127.0.0.1")
-    port = int(os.environ.get("GIBBERISH_PORT", "5000"))
-    debug = os.environ.get("GIBBERISH_DEBUG", "0") in ("1", "true", "yes")
+    """Console-script entry point (``loremopus``) used by uv."""
+    host = os.environ.get("LOREMOPUS_HOST", "127.0.0.1")
+    port = int(os.environ.get("LOREMOPUS_PORT", "5000"))
+    debug = os.environ.get("LOREMOPUS_DEBUG", "0") in ("1", "true", "yes")
     app.run(host=host, port=port, debug=debug, threaded=True)
 
 

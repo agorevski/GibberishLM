@@ -26,7 +26,7 @@ THINKING_OPENERS: List[str] = [
 
 FAKE_COMMANDS: List[str] = [
     'echo "hello world"',
-    'echo "Gibberish online"',
+    'echo "LoremOpus online"',
     "ls -la",
     "pwd",
     'printf "%s\\n" lorem ipsum dolor',
@@ -56,7 +56,7 @@ def _thinking_block() -> str:
 
 
 def thinking_text(approx_words: int) -> str:
-    """Generate reasoning-style gibberish of roughly ``approx_words`` words.
+    """Generate reasoning-style lorem ipsum of roughly ``approx_words`` words.
 
     Used to size the "thinking" phase so its streaming duration matches a
     sampled time budget (see ``timing.RequestTiming``).

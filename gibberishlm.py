@@ -26,7 +26,7 @@ THINKING_OPENERS: List[str] = [
 
 FAKE_COMMANDS: List[str] = [
     'echo "hello world"',
-    'echo "LoremOpus online"',
+    'echo "GibberishLM online"',
     "ls -la",
     "pwd",
     'printf "%s\\n" lorem ipsum dolor',

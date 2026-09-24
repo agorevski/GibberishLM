@@ -48,6 +48,33 @@ class MessagesApiTests(unittest.TestCase):
         self.assertFalse(any(block["type"] == "tool_use"
                              for block in message["content"]))
 
+    def test_claude_code_system_message_is_accepted(self):
+        messages = [
+            {"role": "user", "content": [{"type": "text", "text": "test"}]},
+            {"role": "system", "content": [
+                {"type": "text", "text": "Claude Code system context"},
+            ]},
+        ]
+
+        response = self.client.post(
+            "/v1/messages", json=self.request_body(messages=messages)
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["type"], "message")
+
+    def test_unknown_message_role_is_rejected(self):
+        response = self.client.post(
+            "/v1/messages",
+            json=self.request_body(messages=[
+                {"role": "tool", "content": "unexpected"},
+            ]),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["error"]["type"],
+                         "invalid_request_error")
+
     def test_streaming_message(self):
         response = self.client.post(
             "/v1/messages", json=self.request_body(stream=True)

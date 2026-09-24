@@ -1,5 +1,5 @@
 [project]
-name = "loremopus"
+name = "gibberishlm"
 version = "0.1.0"
 description = "A local Anthropic-compatible API serving fabricated output for CLI demos."
 readme = "README.md"
@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [project.scripts]
-loremopus = "app:main"
+gibberishlm = "app:main"
 
 [tool.uv]
 package = true
@@ -21,7 +21,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 include = [
     "app.py",
-    "loremopus.py",
+    "gibberishlm.py",
     "anthropic_api.py",
     "timing.py",
 ]

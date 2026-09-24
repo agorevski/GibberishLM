@@ -1,6 +1,6 @@
-# LoremOpus API runbook
+# GibberishLM API runbook
 
-LoremOpus serves locally generated nonsense through a subset of the Anthropic
+GibberishLM serves locally generated nonsense through a subset of the Anthropic
 Messages API. Use the launchers for a temporary server connected to Claude Code
 or GitHub Copilot CLI, or start the service manually for direct API calls. The
 backend has no real model or hosted inference dependency; installing third-party
@@ -25,8 +25,8 @@ From the project root:
 # Install dependencies into a project-local virtualenv (.venv)
 uv sync --locked
 
-# Run on http://127.0.0.1:5000 without offering tool calls
-LOREMOPUS_TOOLS=0 uv run --locked loremopus
+# Run on http://127.0.0.1:5000 with tool calls enabled
+GIBBERISHLM_TOOLS=1 uv run --locked gibberishlm
 ```
 
 You should see Flask serving on `http://127.0.0.1:5000`. There is no browser
@@ -38,44 +38,44 @@ port as a launcher.
 
 | Variable           | Default                      | Purpose                                            |
 |--------------------|------------------------------|----------------------------------------------------|
-| `LOREMOPUS_HOST`   | `127.0.0.1`                  | Bind address                                       |
-| `LOREMOPUS_PORT`   | `5000`                       | Bind port (launcher accepts 1–65535)              |
-| `LOREMOPUS_MODEL_ID` | `claude-opus-4-8-loremopus` | Model id reported to API clients                  |
-| `LOREMOPUS_TOOLS`  | `1` standalone, `0` in launchers | `0` disables Bash tool-use requests; `1` allows them when a client offers `Bash` |
-| `LOREMOPUS_DEBUG`  | `0`                          | `1` enables Flask debug/reloader                   |
+| `GIBBERISHLM_HOST`   | `127.0.0.1`                  | Bind address                                       |
+| `GIBBERISHLM_PORT`   | `5000`                       | Bind port (launcher accepts 1–65535)              |
+| `GIBBERISHLM_MODEL_ID` | `claude-opus-4-8-gibberishlm` | Model id reported to API clients                  |
+| `GIBBERISHLM_TOOLS`  | `1` | `0` disables tool-use requests; `1` calls a supported tool offered by the client |
+| `GIBBERISHLM_DEBUG`  | `0`                          | `1` enables Flask debug/reloader                   |
 
-The launchers force `LOREMOPUS_HOST=127.0.0.1` and `LOREMOPUS_DEBUG=0`.
-`LOREMOPUS_PORT`, `LOREMOPUS_MODEL_ID`, and `LOREMOPUS_TOOLS` can be set for
-either launcher. `LOREMOPUS_STARTUP_TIMEOUT` controls how long a launcher waits
+The launchers force `GIBBERISHLM_HOST=127.0.0.1` and `GIBBERISHLM_DEBUG=0`.
+`GIBBERISHLM_PORT`, `GIBBERISHLM_MODEL_ID`, and `GIBBERISHLM_TOOLS` can be set for
+either launcher. `GIBBERISHLM_STARTUP_TIMEOUT` controls how long a launcher waits
 for the API to respond (default: 60 seconds; allowed range: 1–999).
 
 #### Response-timing knobs
 
-LoremOpus deliberately streams slowly, with a variable time-to-first-token and a
+GibberishLM deliberately streams slowly, with a variable time-to-first-token and a
 variable "thinking" phase. Tune it with:
 
 | Variable                  | Default | Purpose                                             |
 |---------------------------|---------|-----------------------------------------------------|
-| `LOREMOPUS_SPEED`         | `1.0`   | Global multiplier on every delay (`0.2` = fast demo)|
-| `LOREMOPUS_TEXT_TPS`      | `38`    | Answer streaming rate (tokens/sec)                  |
-| `LOREMOPUS_THINK_TPS`     | `48`    | Thinking streaming rate (tokens/sec)                |
-| `LOREMOPUS_TOOL_TPS`      | `85`    | Tool-request streaming rate (tokens/sec)            |
-| `LOREMOPUS_TTFT_MIN/MAX`  | `1.0`/`4.0` | Time-to-first-token range (seconds)             |
-| `LOREMOPUS_THINK_MIN/MAX` | `2.5`/`12.0` | Thinking-phase budget range (seconds)          |
-| `LOREMOPUS_HIDDEN_THINK_CAP` | `6.0` | Max silent deliberation when thinking isn't shown  |
+| `GIBBERISHLM_SPEED`         | `1.0`   | Global multiplier on every delay (`0.2` = fast demo)|
+| `GIBBERISHLM_TEXT_TPS`      | `38`    | Answer streaming rate (tokens/sec)                  |
+| `GIBBERISHLM_THINK_TPS`     | `48`    | Thinking streaming rate (tokens/sec)                |
+| `GIBBERISHLM_TOOL_TPS`      | `85`    | Tool-request streaming rate (tokens/sec)            |
+| `GIBBERISHLM_TTFT_MIN/MAX`  | `1.0`/`4.0` | Time-to-first-token range (seconds)             |
+| `GIBBERISHLM_THINK_MIN/MAX` | `2.5`/`12.0` | Thinking-phase budget range (seconds)          |
+| `GIBBERISHLM_HIDDEN_THINK_CAP` | `6.0` | Max silent deliberation when thinking isn't shown  |
 
 Durations vary with the sampled pauses and amount of generated content.
 
 For a snappier demo:
 
 ```bash
-LOREMOPUS_SPEED=0.25 ./scripts/run-claude.sh -p "Say hello"
+GIBBERISHLM_SPEED=0.25 ./scripts/run-claude.sh -p "Say hello"
 ```
 
 Example on a custom port:
 
 ```bash
-LOREMOPUS_PORT=5050 ./scripts/run-copilot.sh -p "Say hello"
+GIBBERISHLM_PORT=5050 ./scripts/run-copilot.sh -p "Say hello"
 ```
 
 ### Verify it's up
@@ -85,7 +85,7 @@ curl -fsS http://127.0.0.1:5000/v1/models | python3 -m json.tool
 ```
 
 Use the configured port (e.g. `5050`) instead of `5000` if it was changed.
-You should get a JSON model list containing `claude-opus-4-8-loremopus`.
+You should get a JSON model list containing `claude-opus-4-8-gibberishlm`.
 
 ---
 
@@ -111,10 +111,10 @@ run these Bash launchers in an environment with Bash, `curl`, and `uv` (for
 example, WSL). For a different port:
 
 ```bash
-LOREMOPUS_PORT=5050 ./scripts/run-copilot.sh -p "Say hello"
+GIBBERISHLM_PORT=5050 ./scripts/run-copilot.sh -p "Say hello"
 ```
 
-Each script launches LoremOpus bound to loopback, waits for `/v1/models` to
+Each script launches GibberishLM bound to loopback, waits for `/v1/models` to
 respond, then runs the chosen CLI. The server runs in the background **only
 while that CLI session is running**; on exit or interruption the script stops
 its server. If a service already answers on the chosen port, use another port
@@ -133,9 +133,9 @@ conflicting Anthropic-token and cloud-provider settings for that invocation.
 The Copilot launcher configures Anthropic BYOK via `COPILOT_PROVIDER_TYPE`,
 `COPILOT_PROVIDER_BASE_URL`, and a dummy `COPILOT_PROVIDER_API_KEY`. It defaults
 `COPILOT_OFFLINE` to `true` and routes the actual request model via
-`COPILOT_PROVIDER_WIRE_MODEL` to LoremOpus's model ID. Its
+`COPILOT_PROVIDER_WIRE_MODEL` to GibberishLM's model ID. Its
 `COPILOT_MODEL=claude-sonnet-4` is a CLI-facing model selection, **not** a real
-model served by LoremOpus. Both launchers use `LOREMOPUS_MODEL_ID` if you
+model served by GibberishLM. Both launchers use `GIBBERISHLM_MODEL_ID` if you
 override the default wire model ID.
 
 To re-enable Copilot's GitHub, MCP, web, and other network capabilities, run:
@@ -144,22 +144,25 @@ To re-enable Copilot's GitHub, MCP, web, and other network capabilities, run:
 COPILOT_OFFLINE=false ./scripts/run-copilot.sh -p "Say hello"
 ```
 
-The BYOK provider and wire model remain pointed at the local LoremOpus server
+The BYOK provider and wire model remain pointed at the local GibberishLM server
 for inference, but the **CLI session is not offline** when this is set to
 `false`. Leave the default in place if you do not want those additional
 network capabilities.
 
-Tool-use requests are **off by default in both launchers**. To opt in:
+Tool-use requests are **on by default in both launchers**:
 
 ```bash
-LOREMOPUS_TOOLS=1 ./scripts/run-claude.sh -p "Run a demo command"
+./scripts/run-claude.sh -p "Run a demo command"
 ```
 
-When enabled, the API may emit a `Bash` tool-use request if the client offers
-that tool; the CLI can actually execute a command if you approve it. LoremOpus
-does not execute the command itself. Read the command and keep normal CLI
-permission prompts in place. You can also send `"tool_choice":{"type":"none"}`
-in an API request to suppress tool calls regardless of the server setting.
+When enabled, the API emits one safe tool-use request on each fresh turn when
+the client offers a supported tool. Claude Code uses `Bash`; Copilot CLI can
+use `bash`, `list_bash`, `list_agents`, `glob`, `grep`, `rg`, or `sql`. The CLI
+executes the tool after any normal permission prompt; GibberishLM does not execute
+it itself. Set `GIBBERISHLM_TOOLS=0` or send `"tool_choice":{"type":"none"}` to
+suppress tool calls.
+An immediate user turn containing a tool result will not request another tool;
+an older tool result does not suppress tool use in a later fresh turn.
 
 ---
 
@@ -170,8 +173,8 @@ Start the service manually as in section 1. For a non-streaming response:
 ```bash
 curl -fsS http://127.0.0.1:5000/v1/messages \
   -H 'Content-Type: application/json' \
-  -H 'x-api-key: local-loremopus' \
-  -d '{"model":"claude-opus-4-8-loremopus","max_tokens":128,"messages":[{"role":"user","content":"Say hello"}],"tool_choice":{"type":"none"}}'
+  -H 'x-api-key: local-gibberishlm' \
+  -d '{"model":"claude-opus-4-8-gibberishlm","max_tokens":128,"messages":[{"role":"user","content":"Say hello"}],"tool_choice":{"type":"none"}}'
 ```
 
 For Anthropic-style Server-Sent Events (SSE), add `"stream":true`:
@@ -179,14 +182,26 @@ For Anthropic-style Server-Sent Events (SSE), add `"stream":true`:
 ```bash
 curl -NfsS http://127.0.0.1:5000/v1/messages \
   -H 'Content-Type: application/json' \
-  -H 'x-api-key: local-loremopus' \
-  -d '{"model":"claude-opus-4-8-loremopus","max_tokens":128,"messages":[{"role":"user","content":"Say hello"}],"tool_choice":{"type":"none"},"stream":true}'
+  -H 'x-api-key: local-gibberishlm' \
+  -d '{"model":"claude-opus-4-8-gibberishlm","max_tokens":128,"messages":[{"role":"user","content":"Say hello"}],"tool_choice":{"type":"none"},"stream":true}'
 ```
 
 The `x-api-key` shown here is a dummy value: the demo accepts requests
 without authentication. Response timing is deliberately variable, so streaming
 may pause before the first content event. If you chose a custom port, replace
 `5000` in the URL.
+
+`max_tokens` is optional for this demo, but if supplied must be a positive
+integer. It caps output using a rough character-based token estimate; text or
+thinking may be truncated, while tool-use blocks are emitted only if they fit
+whole. A truncated response has `stop_reason: "max_tokens"`. Streaming and
+non-streaming responses use the same estimated input/output usage, with input
+usage matching `/v1/messages/count_tokens`. These are estimates, not actual
+model token counts.
+
+Malformed JSON, wrong content types, and invalid fields return HTTP 400 with
+`{"type":"error","error":{"type":"invalid_request_error","message":"..."}}`
+rather than a fabricated success response.
 
 Implemented endpoints:
 
@@ -214,12 +229,12 @@ server. A manually started server runs until `Ctrl-C` in its terminal.
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Launcher reports a missing command | `uv`, `curl`, `claude`, or `copilot` is not on `PATH` | Install the prerequisite and verify `<command> --version` |
-| Launcher reports an already-responding port | Another service is using that port | Set `LOREMOPUS_PORT=5050` (or another free port) |
+| Launcher reports an already-responding port | Another service is using that port | Set `GIBBERISHLM_PORT=5050` (or another free port) |
 | CLI cannot connect | Server did not become ready or wrong port in a manual setup | Prefer a launcher; for manual setup, check `curl -fsS http://127.0.0.1:5000/v1/models` |
-| No Bash calls occur | Launchers disable them by default; the client may not offer `Bash`, or randomness skips them | If wanted, set `LOREMOPUS_TOOLS=1` and keep permissions enabled |
+| No tool calls occur | The client did not offer a supported tool, tools were disabled, or the request is a tool-result continuation | Keep `GIBBERISHLM_TOOLS=1` and tool permissions enabled |
 | Real model output appears | CLI was run outside the launcher or is using a different provider | Run the matching script, not `claude` or `copilot` directly |
 
-LoremOpus does **not** enforce authentication. Keep it bound to
+GibberishLM does **not** enforce authentication. Keep it bound to
 `127.0.0.1`, leave debug mode off, and do not expose the API to untrusted
 networks. The launchers enforce the loopback bind; manual use should do the
 same. Neither a production web server nor hosted infrastructure is required

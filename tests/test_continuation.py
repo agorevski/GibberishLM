@@ -5,11 +5,11 @@ import anthropic_api
 
 
 class ContinuationPlanningTests(unittest.TestCase):
-    def plan(self, messages):
+    def plan(self, messages, tools=None):
         with patch("anthropic_api.random.random", return_value=0), \
                 patch("anthropic_api.random.choice", return_value="echo hello"):
             return anthropic_api.plan_blocks(
-                messages, [{"name": "Bash"}],
+                messages, tools or [{"name": "Bash"}],
                 want_thinking=True, allow_tools=True, think_words=4,
             )
 
@@ -58,6 +58,35 @@ class ContinuationPlanningTests(unittest.TestCase):
         self.assert_fresh_turn(self.plan([
             {"role": "user", "content": "Say hello"},
         ]))
+
+    def test_copilot_tools_use_offered_names_and_valid_inputs(self):
+        for name, expected_input in (
+            ("bash", {"command": "echo hello",
+                      "description": "Run a safe GibberishLM demo command"}),
+            ("glob", {"pattern": "*"}),
+            ("sql", {"description": "Run demo query", "query": "SELECT 1"}),
+        ):
+            with self.subTest(name=name):
+                block = self.plan(
+                    [{"role": "user", "content": "Use a tool"}],
+                    tools=[{"name": name}],
+                )[-1]
+                self.assertEqual(block["type"], "tool_use")
+                self.assertEqual(block["name"], name)
+                self.assertEqual(block["input"], expected_input)
+
+    def test_generated_content_is_half_length(self):
+        with patch("anthropic_api.gibberishlm.thinking_text",
+                   return_value="thought") as thinking, \
+                patch("anthropic_api.gibberishlm._paragraph",
+                      return_value="answer") as paragraph:
+            anthropic_api.plan_blocks(
+                [{"role": "user", "content": "Say hello"}], [],
+                want_thinking=True, allow_tools=False, think_words=100,
+            )
+
+        thinking.assert_called_once_with(50)
+        paragraph.assert_called_once_with(1, 2)
 
     def test_tool_result_in_non_user_message_is_not_a_continuation(self):
         self.assert_fresh_turn(self.plan([

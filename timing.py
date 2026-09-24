@@ -1,4 +1,4 @@
-"""Response-timing model for LoremOpus.
+"""Response-timing model for GibberishLM.
 
 Emulates the latency profile of an expensive, high-end frontier model:
 
@@ -11,7 +11,7 @@ Every request samples its own :class:`RequestTiming` profile, so two identical
 prompts take noticeably different — but always plausible — amounts of time.
 
 All timings are configurable via environment variables (see the constants
-below). Set ``LOREMOPUS_SPEED`` to globally scale every delay (e.g. ``0.2`` for
+below). Set ``GIBBERISHLM_SPEED`` to globally scale every delay (e.g. ``0.2`` for
 fast demos, ``2.0`` for an extra-sluggish "thinking really hard" feel).
 """
 
@@ -29,28 +29,28 @@ def _f(name: str, default: float) -> float:
 
 
 # Streaming output rates, in tokens/second (a premium model is deliberate).
-TEXT_TPS = _f("LOREMOPUS_TEXT_TPS", 38.0)
-THINK_TPS = _f("LOREMOPUS_THINK_TPS", 48.0)
-TOOL_TPS = _f("LOREMOPUS_TOOL_TPS", 85.0)
+TEXT_TPS = _f("GIBBERISHLM_TEXT_TPS", 38.0)
+THINK_TPS = _f("GIBBERISHLM_THINK_TPS", 48.0)
+TOOL_TPS = _f("GIBBERISHLM_TOOL_TPS", 85.0)
 
 # Time-to-first-token (seconds): latency before any output appears.
-TTFT_MIN = _f("LOREMOPUS_TTFT_MIN", 1.0)
-TTFT_MAX = _f("LOREMOPUS_TTFT_MAX", 4.0)
+TTFT_MIN = _f("GIBBERISHLM_TTFT_MIN", 1.0)
+TTFT_MAX = _f("GIBBERISHLM_TTFT_MAX", 4.0)
 
 # Thinking-phase budget (seconds), sampled per request.
-THINK_MIN = _f("LOREMOPUS_THINK_MIN", 2.5)
-THINK_MAX = _f("LOREMOPUS_THINK_MAX", 12.0)
+THINK_MIN = _f("GIBBERISHLM_THINK_MIN", 2.5)
+THINK_MAX = _f("GIBBERISHLM_THINK_MAX", 12.0)
 
 # When the client did NOT request visible thinking, the model still
 # "deliberates" silently before answering. This caps that hidden pause (s).
-HIDDEN_THINK_CAP = _f("LOREMOPUS_HIDDEN_THINK_CAP", 6.0)
+HIDDEN_THINK_CAP = _f("GIBBERISHLM_HIDDEN_THINK_CAP", 6.0)
 
 # Tool (bash) execution latency (seconds).
-TOOL_EXEC_MIN = _f("LOREMOPUS_TOOL_EXEC_MIN", 0.4)
-TOOL_EXEC_MAX = _f("LOREMOPUS_TOOL_EXEC_MAX", 2.5)
+TOOL_EXEC_MIN = _f("GIBBERISHLM_TOOL_EXEC_MIN", 0.4)
+TOOL_EXEC_MAX = _f("GIBBERISHLM_TOOL_EXEC_MAX", 2.5)
 
 # Global multiplier applied to every delay. 1.0 = realistic.
-SPEED = _f("LOREMOPUS_SPEED", 1.0)
+SPEED = _f("GIBBERISHLM_SPEED", 1.0)
 
 # Rough words-per-token factor used to size/pace generated content.
 TOKENS_PER_WORD = 1.3
